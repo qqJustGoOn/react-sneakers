@@ -40,13 +40,25 @@ function App() {
 
     const onAddToCart = async (obj) => {
         try {
-            if (cartItems.find(item => Number(item.id) === Number(obj.id))) {
-                setCartItems(prev => prev.filter(prevItem => Number(prevItem.id) !== Number(obj.id)));
-                await axios.delete(`https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart/${obj.id}`);
+            const findItem = cartItems.find(item => Number(item.parentId) === Number(obj.id));
+            if (findItem) {
+                setCartItems(prev => prev.filter(prevItem => Number(prevItem.parentId) !== Number(obj.id)));
+                await axios.delete(`https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart/${findItem.id}`);
 
             } else {
                 setCartItems(prev => [...prev, obj]);
-                await axios.post('https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart', obj);
+                const {data} = await axios.post('https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart', obj);
+                //Дожидаемся ответа от сервера, и после сравниваем уникальное поле parentId, если совпадает с тем что есть и что пришло, заменяем у обекта сам id !!!
+                setCartItems((prev) => prev.map(item => {
+                    if (item.parentId === data.parentId) {
+                        return {
+                            ...item,
+                            id: data.id
+                        };
+                    }
+                    return item;
+                }));
+
                 // .then(res => setCartItems(prev => [...prev, res.data]));
 
             }
@@ -59,7 +71,7 @@ function App() {
     const onRemoveItem = async (id) => {
         try {
             await axios.delete(`https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart/${id}`);
-            setCartItems(prev => prev.filter(item => item.id !== id));
+            setCartItems(prev => prev.filter(item => Number(item.id) !== Number(id)));
         } catch (error) {
             alert(`Ошибка при удалении из корзины}`);
         }
@@ -84,7 +96,7 @@ function App() {
         setSearchValue(event.target.value);
     }
     const isItemAdded = (id) => {
-        return cartItems.some(cartItem => Number(cartItem.id) === Number(id));
+        return cartItems.some(cartItem => Number(cartItem.parentId) === Number(id));
     }
 
     return (
