@@ -1,10 +1,13 @@
-import Info from "./Info";
 import React from "react";
 import axios from "axios";
-import {useCart} from "../hooks/useCart";
+
+import Info from "../Info";
+import {useCart} from "../../hooks/useCart";
+
+import styles from "./Drawer.module.scss";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-function Drawer({onClose, onRemove, items = []}) {
+function Drawer({onClose, onRemove, opened, items = []}) {
     const {cartItems, setCartItems, totalPrice} = useCart();
     const [isOrderComplete, setIsOrderComplete] = React.useState(false);
     const [orderId, setOrderId] = React.useState(null);
@@ -21,13 +24,12 @@ function Drawer({onClose, onRemove, items = []}) {
            setOrderId(data.id); //устанавливаем Id номер заказа с бэкенда(сервера)
            setIsOrderComplete(true); //заказ оформлен
            setCartItems([]); //очищаем корзину в стейте
-        //КОСТЫЛь
+        //КОСТЫЛь //очищаем корзину на сервере, удаляя поочередно каждый элемент, с ождинаием выполнения удаления
           for (let i = 0; i < cartItems.length; i++) {
             const item = cartItems[i];
-            await axios.delete('https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart/' + item.id, );//очищаем корзину на сервере, удаляя каждый элемент, с ождинаием выполнения удаления
+            await axios.delete('https://64ccbaab2eafdcdc851a33d0.mockapi.io/cart/' + item.id, );
             await delay(1000);
           }
-
 
        } catch (error) {
            alert("Ошибка при создании заказа")
@@ -36,8 +38,8 @@ function Drawer({onClose, onRemove, items = []}) {
     }
 
     return (
-        <div className="overlay">
-            <div className="drawer">
+        <div className={`${styles.overlay} ${opened ? styles.overlayVisible : ''}`}>
+            <div className={styles.drawer}>
                 <h2 className="mb-30 d-flex justify-between">
                     Корзина
                     <img onClick={onClose} className="removeBtn cu-p" src="/img/btn-remove.svg" alt="Close"/>
@@ -46,7 +48,7 @@ function Drawer({onClose, onRemove, items = []}) {
                 {
                     items.length > 0 ?
                         <>
-                            <div className="items">
+                            <div className="items flex">
                                 {items.map((obj) => (
                                     <div key={obj.id} className="cartItem d-flex align-center mb-20">
                                         <div style={{backgroundImage: `url(${obj.imageUrl})`}}
